@@ -2,9 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { CellState } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export async function getHint(board: CellState[][]) {
+  // Initialize right before call to ensure environment variables are ready
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
   const boardStr = board.map(row => row.map(cell => 
     cell === 'peg' ? 'P' : cell === 'empty' ? 'E' : '.'
   ).join('')).join('\n');

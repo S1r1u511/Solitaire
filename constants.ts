@@ -1,5 +1,5 @@
 
-import { CellState } from './types';
+import { CellState } from './types.ts';
 
 // Standard English Board (33 holes)
 export const INITIAL_BOARD: CellState[][] = [

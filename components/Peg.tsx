@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NOTHING_RED } from '../constants';
+import { NOTHING_RED } from '../constants.ts';
 
 interface PegProps {
   state: 'peg' | 'empty' | 'invalid';

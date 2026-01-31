@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { INITIAL_BOARD, BOARD_SIZE } from './constants';
-import { CellState, Position, Move } from './types';
-import Peg from './components/Peg';
-import Controls from './components/Controls';
-import { getHint } from './services/geminiService';
+import React, { useState, useCallback } from 'react';
+import { INITIAL_BOARD, BOARD_SIZE } from './constants.ts';
+import { CellState, Position } from './types.ts';
+import Peg from './components/Peg.tsx';
+import Controls from './components/Controls.tsx';
+import { getHint } from './services/geminiService.ts';
 import { X, Sparkles, Trophy, AlertTriangle } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -52,10 +52,8 @@ const App: React.FC = () => {
     }
 
     if (!hasMoves) {
-      if (pegsLeft === 1 && currentBoard[3][3] === 'peg') {
+      if (pegsLeft === 1) {
         setStatus('won');
-      } else if (pegsLeft === 1) {
-        setStatus('won'); // Technically a win if 1 left anywhere, but center is perfect
       } else {
         setStatus('lost');
       }
@@ -150,7 +148,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 selection:bg-red-500/30">
-      {/* HUD Header */}
       <header className="fixed top-8 left-0 right-0 px-8 flex justify-between items-start pointer-events-none">
         <div className="flex flex-col gap-1">
           <h1 className="dot-matrix text-3xl md:text-4xl font-bold tracking-tight text-white/90">
@@ -170,7 +167,6 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Board Container */}
       <main className="relative z-10 p-6 md:p-12 rounded-[40px] glass-panel flex flex-col items-center max-w-full">
         <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
           {board.map((row, r) => (
@@ -197,7 +193,6 @@ const App: React.FC = () => {
         />
       </main>
 
-      {/* Status Indicators */}
       {status !== 'playing' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="glass-panel p-8 rounded-[32px] max-w-sm w-full text-center border-t-2 border-white/20">
@@ -224,7 +219,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Rules Modal */}
       {showRules && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
           <div className="glass-panel p-8 rounded-[32px] max-w-md w-full relative">
@@ -257,7 +251,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Footer Info */}
       <footer className="fixed bottom-8 text-[10px] text-white/20 font-mono uppercase tracking-[0.3em]">
         Design Language: Void 1.0 // Inspired by Nothing
       </footer>

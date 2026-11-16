@@ -1,59 +1,55 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { CellState } from "../types.ts";
+import { CellState, Position } from "../types.ts";
 
-export async function getHint(board: CellState[][]) {
-  // Initialize right before call to ensure environment variables are ready
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * Hint engine. Previously called Gemini from the browser (which exposed the API key in the bundle).
+ * Now runs locally: prefers a move that leaves the player with follow-up moves, otherwise any legal move.
+ */
+const DIRS = [
+  { r: -2, c: 0 },
+  { r: 2, c: 0 },
+  { r: 0, c: -2 },
+  { r: 0, c: 2 },
+];
 
-  const boardStr = board.map(row => row.map(cell => 
-    cell === 'peg' ? 'P' : cell === 'empty' ? 'E' : '.'
-  ).join('')).join('\n');
+type Hint = { hasMove: boolean; from?: Position; to?: Position; explanation?: string };
 
-  const prompt = `
-    I am playing Brainvita (Peg Solitaire). The board state is:
-    ${boardStr}
-    
-    'P' is a peg, 'E' is an empty hole, '.' is invalid.
-    Rules: A peg can move by jumping over an adjacent peg into an empty hole.
-    Find ONE valid move. Return the "from" and "to" coordinates (0-indexed row and column).
-    If no moves remain, say no moves.
-  `;
+const inBounds = (b: CellState[][], r: number, c: number) => r >= 0 && r < b.length && c >= 0 && c < b[r].length;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            hasMove: { type: Type.BOOLEAN },
-            from: {
-              type: Type.OBJECT,
-              properties: {
-                r: { type: Type.INTEGER },
-                c: { type: Type.INTEGER }
-              }
-            },
-            to: {
-              type: Type.OBJECT,
-              properties: {
-                r: { type: Type.INTEGER },
-                c: { type: Type.INTEGER }
-              }
-            },
-            explanation: { type: Type.STRING }
-          },
-          required: ["hasMove"]
+const legalMoves = (b: CellState[][]) => {
+  const moves: { from: Position; to: Position; over: Position }[] = [];
+  for (let r = 0; r < b.length; r++) {
+    for (let c = 0; c < b[r].length; c++) {
+      if (b[r][c] !== 'peg') continue;
+      for (const d of DIRS) {
+        const to = { r: r + d.r, c: c + d.c };
+        const over = { r: r + d.r / 2, c: c + d.c / 2 };
+        if (inBounds(b, to.r, to.c) && b[to.r][to.c] === 'empty' && b[over.r][over.c] === 'peg') {
+          moves.push({ from: { r, c }, to, over });
         }
       }
-    });
-
-    return JSON.parse(response.text);
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return null;
+    }
   }
+  return moves;
+};
+
+export async function getHint(board: CellState[][]): Promise<Hint | null> {
+  const moves = legalMoves(board);
+  if (moves.length === 0) return { hasMove: false, explanation: 'No moves remain.' };
+
+  // Score each move by how many legal moves it leaves open (simple 1-ply lookahead).
+  let best = moves[0];
+  let bestScore = -1;
+  for (const m of moves) {
+    const next = board.map((row) => [...row]);
+    next[m.from.r][m.from.c] = 'empty';
+    next[m.over.r][m.over.c] = 'empty';
+    next[m.to.r][m.to.c] = 'peg';
+    const score = legalMoves(next).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = m;
+    }
+  }
+  return { hasMove: true, from: best.from, to: best.to, explanation: 'Keeps the most options open.' };
 }

@@ -120,7 +120,7 @@ const App: React.FC = () => {
     setIsAiLoading(true);
     const result = await getHint(board);
     if (result && result.hasMove) {
-      setHint({ from: result.from, to: result.to });
+      setHint({ from: result.from!, to: result.to! });
     } else {
       alert("AI couldn't find a move. Maybe game over?");
     }
